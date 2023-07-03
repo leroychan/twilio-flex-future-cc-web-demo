@@ -13,6 +13,7 @@
     "@twilio-paste/theme": "^5.3.3",
     "@twilio/conversations": "2.1.0-rc.0",
     "@types/file-saver": "2.0.5",
+    "adaptivecards": "^3.0.1",
     "file-saver": "2.0.5",
     "google-auth-library": "8.5.1",
     "googleapis": "107.0.0",
@@ -29,7 +30,8 @@
     "react-scripts": "^5.0.0",
     "redux": "^4.1.2",
     "redux-thunk": "^2.4.0",
-    "slugify": "1.6.5"
+    "slugify": "1.6.5",
+    "swiper": "^9.4.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.15.1",

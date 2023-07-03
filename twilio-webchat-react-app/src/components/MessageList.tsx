@@ -22,6 +22,7 @@ import {
     outerContainerStyles,
     participantTypingStyles
 } from "./styles/MessageList.styles";
+import AdaptiveCardContainer from "./AdaptiveCardContainer";
 
 const isLastOfUserGroup = (message: Message, i: number, messages: Message[]) => {
     const nextMessage = messages[i + 1];
@@ -215,6 +216,9 @@ export const MessageList = () => {
                         focusable={message.index === focusIndex}
                         updateFocus={updateFocus}
                     />
+                    {message.attributes && message.attributes.hasOwnProperty("adaptive-card") && (
+                        <AdaptiveCardContainer message={message} />
+                    )}
                 </Box>
             );
         });
