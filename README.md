@@ -2,6 +2,9 @@
 
 Demonstration of using AdaptiveCards.io in Twilio Flex + Web Chat to create interactive conversation cards
 
+## Demo
+
+![Demo](docs/demo.gif)
 ## Project Structure
 
 This application includes two components:
@@ -35,6 +38,3 @@ See the `serverless-functions/src/assets/conversation-cards` directory
 
 Each adaptive card is defined in the `definitions/*.json` sub folder
 
-## Demo
-
-![Demo](docs/demo.gif)
