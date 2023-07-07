@@ -1,7 +1,13 @@
+import log from "loglevel";
 import React, { useEffect, useRef } from "react";
 import { Alert, Box, Card } from "@twilio-paste/core";
 import { Message } from "@twilio/conversations";
 import * as AdaptiveCards from "adaptivecards";
+import { useSelector } from "react-redux";
+
+import { AppState } from "../store/definitions";
+
+import "./AdaptiveCardContainer.css";
 
 interface AdaptiveCardContainerProps {
     message: Message;
@@ -11,11 +17,26 @@ interface IDictionary {
     [index: string]: string;
 }
 
+type CardAction = {
+    text: string;
+};
+
 const ADAPTIVE_CARD_KEY_NAME: string = "adaptive-card";
 
 const AdaptiveCardContainer: React.FunctionComponent<AdaptiveCardContainerProps> = ({ message }) => {
+    const { conversation } = useSelector((state: AppState) => ({
+        conversation: state.chat.conversation
+    }));
+
     const attributes: IDictionary = message.attributes as IDictionary;
     const mountRef = useRef<HTMLElement>(null);
+
+    const openWindow = (url: string) => {
+        if (window && window?.open) {
+            const w = window.open(url, "_blank");
+            if (w) w.focus();
+        }
+    };
 
     // Create the reference to the adaptive card once and maintain a reference to it
     useEffect(() => {
@@ -28,13 +49,28 @@ const AdaptiveCardContainer: React.FunctionComponent<AdaptiveCardContainerProps>
         };
         const adaptiveCard = new AdaptiveCards.AdaptiveCard();
         adaptiveCard.hostConfig = new AdaptiveCards.HostConfig(hostConfig);
-        adaptiveCard.parse(JSON.parse(attributes[ADAPTIVE_CARD_KEY_NAME]));
+        adaptiveCard.parse(attributes[ADAPTIVE_CARD_KEY_NAME]);
 
         // Provide an onExecuteAction handler to handle the Action.Submit
         adaptiveCard.onExecuteAction = (action: AdaptiveCards.Action) => {
+            console.info("User clicked: ", action);
+
             if (action instanceof AdaptiveCards.SubmitAction) {
-                // If you copy this code sample, remove the alert statement and provide your own custom handling code
-                console.info("User clicked: ", action.title);
+                // Send back data as text
+                if (action?.data?.hasOwnProperty("text")) {
+                    const { text } = action.data as CardAction;
+                    if (!conversation) {
+                        log.error("Failed sending message: no conversation found");
+                        return;
+                    }
+
+                    let preparedMessage = conversation.prepareMessage();
+                    preparedMessage = preparedMessage.setBody(text);
+                    preparedMessage.build().send();
+                }
+            } else if (action instanceof AdaptiveCards.OpenUrlAction) {
+                console.info("User clicked open URL action: ", action.url);
+                if (action && action.url) openWindow(action.url);
             }
         };
 
