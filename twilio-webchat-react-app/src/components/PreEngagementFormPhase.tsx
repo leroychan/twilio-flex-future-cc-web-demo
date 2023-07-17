@@ -16,6 +16,12 @@ import { notifications } from "../notifications";
 import { NotificationBar } from "./NotificationBar";
 import { introStyles, fieldStyles, titleStyles, formStyles } from "./styles/PreEngagementFormPhase.styles";
 
+interface WindowWithSegment {
+    analytics?: {
+        identify: any;
+    };
+}
+
 export const PreEngagementFormPhase = () => {
     const { name, email, query } = useSelector((state: AppState) => state.session.preEngagementData) || {};
     const dispatch = useDispatch();
@@ -31,6 +37,17 @@ export const PreEngagementFormPhase = () => {
                     query
                 }
             });
+
+            // Send Segment event
+            const w = window as WindowWithSegment;
+            if (w && w.analytics && w.analytics.identify && email && name) {
+                w.analytics.identify(email, {
+                    email,
+                    firstName: name.split(" ")[0],
+                    lastName: name.split(" ")[1]
+                });
+            }
+
             dispatch(initSession({ token: data.token, conversationSid: data.conversationSid }));
         } catch (err) {
             dispatch(addNotification(notifications.failedToInitSessionNotification((err as Error).message)));
