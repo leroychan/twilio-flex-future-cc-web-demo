@@ -59,19 +59,13 @@ export const PreEngagementFormPhase = () => {
         }
     };
 
-    /*
-     * const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-     *  if (e.key === "Enter" && !e.shiftKey) {
-     *        e.preventDefault();
-     *        handleSubmit(e);
-     *    }
-     * };
-     */
-    const handleOnChangeOrBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.value.startsWith("4") && e.target.value.length === 9) {
             dispatch(updatePreEngagementData({ phone: `+614${e.target.value.slice(1)}` }));
         } else if (e.target.value.startsWith("04")) {
             dispatch(updatePreEngagementData({ phone: `+614${e.target.value.slice(2)}` }));
+        } else {
+            dispatch(updatePreEngagementData({ phone: e.target.value }));
         }
     };
 
@@ -111,15 +105,14 @@ export const PreEngagementFormPhase = () => {
                     />
                 </Box>
                 <Box {...fieldStyles}>
-                    <Label htmlFor="email">Phone Number</Label>
+                    <Label htmlFor="phone">Phone Number</Label>
                     <Input
                         type="tel"
-                        placeholder="+614"
+                        placeholder="Please enter your phone number"
                         name="phone"
-                        onBlur={handleOnChangeOrBlur}
-                        data-test="pre-engagement-chat-form-email-input"
+                        onChange={handleOnChange}
+                        data-test="pre-engagement-chat-form-phone-input"
                         value={phone}
-                        onChange={handleOnChangeOrBlur}
                         required
                     />
                 </Box>
