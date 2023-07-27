@@ -21,7 +21,7 @@ export const ConversationEnded = () => {
 
     const handleStartNewChat = () => {
         sessionDataHandler.clear();
-        dispatch(updatePreEngagementData({ email: "", name: "", query: "" }));
+        dispatch(updatePreEngagementData({ email: "", name: "", query: "", phone: "" }));
         dispatch(changeEngagementPhase({ phase: EngagementPhase.PreEngagementForm }));
     };
 

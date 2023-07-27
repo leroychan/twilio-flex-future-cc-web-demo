@@ -5,6 +5,9 @@ import { AlertVariants } from "@twilio-paste/core/alert";
 import { FileAttachmentConfig, TranscriptConfig } from "../definitions";
 
 export enum EngagementPhase {
+    PreEngagementDestination = "PreEngagementDestination",
+    PreEngagementColour = "PreEngagementColour",
+    PreEngagementAnimal = "PreEngagementAnimal",
     PreEngagementForm = "PreEngagementForm",
     MessagingCanvas = "MessagingCanvas",
     Loading = "Loading"
@@ -20,7 +23,15 @@ export type ChatState = {
     conversationState?: string;
 };
 
-export type PreEngagementData = { name: string; email: string; query: string };
+export type PreEngagementData = {
+    name: string;
+    email: string;
+    phone: string;
+    query: string;
+    animal: string;
+    colour: string;
+    destination: string;
+};
 
 export type SessionState = {
     currentPhase: EngagementPhase;

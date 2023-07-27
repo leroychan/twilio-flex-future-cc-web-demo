@@ -1,11 +1,13 @@
+/* eslint-disable camelcase */
 import { Input } from "@twilio-paste/core/input";
 import { Label } from "@twilio-paste/core/label";
 import { Box } from "@twilio-paste/core/box";
-import { TextArea } from "@twilio-paste/core/textarea";
+// import { TextArea } from "@twilio-paste/core/textarea";
 import { FormEvent } from "react";
 import { Button } from "@twilio-paste/core/button";
 import { useDispatch, useSelector } from "react-redux";
 import { Text } from "@twilio-paste/core/text";
+import { Anchor, Stack } from "@twilio-paste/core";
 
 import { sessionDataHandler } from "../sessionDataHandler";
 import { addNotification, changeEngagementPhase, updatePreEngagementData } from "../store/actions/genericActions";
@@ -15,39 +17,41 @@ import { Header } from "./Header";
 import { notifications } from "../notifications";
 import { NotificationBar } from "./NotificationBar";
 import { introStyles, fieldStyles, titleStyles, formStyles } from "./styles/PreEngagementFormPhase.styles";
-
-interface WindowWithSegment {
-    analytics?: {
-        identify: any;
-    };
-}
+import { useAnalytics } from "./Analytics";
 
 export const PreEngagementFormPhase = () => {
-    const { name, email, query } = useSelector((state: AppState) => state.session.preEngagementData) || {};
+    const { name, email, phone, animal, colour, destination } =
+        useSelector((state: AppState) => state.session.preEngagementData) || {};
     const dispatch = useDispatch();
+    const analytics = useAnalytics();
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+
         dispatch(changeEngagementPhase({ phase: EngagementPhase.Loading }));
+        analytics.identify(email, {
+            name,
+            email,
+            phone,
+            animal,
+            favourite_colour: colour,
+            destination_preference: destination
+        });
+
+        analytics.track("Request Engagement", { source: "Web widget" });
+
         try {
             const data = await sessionDataHandler.fetchAndStoreNewSession({
                 formData: {
                     friendlyName: name,
                     email,
-                    query
+                    phone,
+                    query: `I'm at the Twilio Talk!`,
+                    animal,
+                    colour,
+                    destination
                 }
             });
-
-            // Send Segment event
-            const w = window as WindowWithSegment;
-            if (w && w.analytics && w.analytics.identify && email && name) {
-                w.analytics.identify(email, {
-                    email,
-                    firstName: name.split(" ")[0],
-                    lastName: name.split(" ")[1]
-                });
-            }
-
             dispatch(initSession({ token: data.token, conversationSid: data.conversationSid }));
         } catch (err) {
             dispatch(addNotification(notifications.failedToInitSessionNotification((err as Error).message)));
@@ -55,10 +59,19 @@ export const PreEngagementFormPhase = () => {
         }
     };
 
-    const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit(e);
+    /*
+     * const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+     *  if (e.key === "Enter" && !e.shiftKey) {
+     *        e.preventDefault();
+     *        handleSubmit(e);
+     *    }
+     * };
+     */
+    const handleOnChangeOrBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        if (e.target.value.startsWith("4") && e.target.value.length === 9) {
+            dispatch(updatePreEngagementData({ phone: `+614${e.target.value.slice(1)}` }));
+        } else if (e.target.value.startsWith("04")) {
+            dispatch(updatePreEngagementData({ phone: `+614${e.target.value.slice(2)}` }));
         }
     };
 
@@ -97,8 +110,28 @@ export const PreEngagementFormPhase = () => {
                         required
                     />
                 </Box>
+                <Box {...fieldStyles}>
+                    <Label htmlFor="email">Phone Number</Label>
+                    <Input
+                        type="tel"
+                        placeholder="+614"
+                        name="phone"
+                        onBlur={handleOnChangeOrBlur}
+                        data-test="pre-engagement-chat-form-email-input"
+                        value={phone}
+                        onChange={handleOnChangeOrBlur}
+                        required
+                    />
+                </Box>
 
                 <Box {...fieldStyles}>
+                    We will use the information you provide consistent with our{" "}
+                    <Anchor href="https://www.twilio.com/legal/privacy" showExternal target="_blank">
+                        Privacy Policy.
+                    </Anchor>
+                </Box>
+
+                {/* <Box {...fieldStyles}>
                     <Label htmlFor="query">How can we help you?</Label>
                     <TextArea
                         placeholder="Ask a question"
@@ -109,11 +142,19 @@ export const PreEngagementFormPhase = () => {
                         onKeyPress={handleKeyPress}
                         required
                     />
-                </Box>
-
-                <Button variant="primary" type="submit" data-test="pre-engagement-start-chat-button">
-                    Start chat
-                </Button>
+                </Box> */}
+                <Stack orientation="horizontal" spacing="space30">
+                    <Button variant="primary" type="submit" data-test="pre-engagement-start-chat-button">
+                        Start chat
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => dispatch(changeEngagementPhase({ phase: EngagementPhase.PreEngagementColour }))}
+                        data-test="pre-engagement-start-chat-button"
+                    >
+                        Start over
+                    </Button>
+                </Stack>
             </Box>
         </>
     );

@@ -8,6 +8,7 @@ import { sessionDataHandler } from "./sessionDataHandler";
 import { initConfig } from "./store/actions/initActions";
 import { ConfigState } from "./store/definitions";
 import { initLogger } from "./logger";
+import { AnalyticsProvider } from "./components/Analytics";
 
 const defaultConfig: ConfigState = {
     serverUrl: "http://localhost:3001",
@@ -45,7 +46,9 @@ const initWebchat = async (config: ConfigState) => {
 
     render(
         <Provider store={store}>
-            <WebchatWidget />
+            <AnalyticsProvider writeKey={process.env.REACT_APP_SEGMENT_API_KEY || "not configured"}>
+                <WebchatWidget />
+            </AnalyticsProvider>
         </Provider>,
         rootElement
     );

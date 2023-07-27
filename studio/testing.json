@@ -1,0 +1,289 @@
+{
+  "description": "COMMON - Twilio Talks - Melbs",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "event": "incomingMessage"
+        },
+        {
+          "event": "incomingCall"
+        },
+        {
+          "next": "send_and_wait_cmd",
+          "event": "incomingConversationMessage"
+        },
+        {
+          "event": "incomingRequest"
+        },
+        {
+          "event": "incomingParent"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -520,
+          "y": 830
+        }
+      }
+    },
+    {
+      "name": "end_on_fail",
+      "type": "run-function",
+      "transitions": [
+        {
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZS9c5efdc2c505e15535eb00997831e16a",
+        "environment_sid": "ZE4a42afdf781d23e3569d0b263c033ffb",
+        "offset": {
+          "x": 230,
+          "y": 1700
+        },
+        "function_sid": "ZH0cf594bb46aef1f653921103e42305ee",
+        "parameters": [
+          {
+            "value": "{{trigger.conversation.ConversationSid}}",
+            "key": "sid"
+          }
+        ],
+        "url": "https://twilio-virtual-agent-hooks-4077-dev.twil.io/end_convo"
+      }
+    },
+    {
+      "name": "end_on_expire",
+      "type": "run-function",
+      "transitions": [
+        {
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZS9c5efdc2c505e15535eb00997831e16a",
+        "environment_sid": "ZE4a42afdf781d23e3569d0b263c033ffb",
+        "offset": {
+          "x": -160,
+          "y": 1700
+        },
+        "function_sid": "ZH0cf594bb46aef1f653921103e42305ee",
+        "parameters": [
+          {
+            "value": "{{trigger.conversation.ConversationSid}}",
+            "key": "sid"
+          }
+        ],
+        "url": "https://twilio-virtual-agent-hooks-4077-dev.twil.io/end_convo"
+      }
+    },
+    {
+      "name": "end",
+      "type": "run-function",
+      "transitions": [
+        {
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZS9c5efdc2c505e15535eb00997831e16a",
+        "environment_sid": "ZE4a42afdf781d23e3569d0b263c033ffb",
+        "offset": {
+          "x": -1330,
+          "y": 2130
+        },
+        "function_sid": "ZH0cf594bb46aef1f653921103e42305ee",
+        "parameters": [
+          {
+            "value": "{{trigger.conversation.ConversationSid}}",
+            "key": "sid"
+          }
+        ],
+        "url": "https://twilio-virtual-agent-hooks-4077-dev.twil.io/end_convo"
+      }
+    },
+    {
+      "name": "split_1",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "send_and_wait_cmd",
+          "event": "noMatch"
+        },
+        {
+          "next": "end",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains end",
+              "arguments": ["{{widgets.send_and_wait_cmd.inbound.Body}}"],
+              "type": "contains",
+              "value": "end"
+            }
+          ]
+        },
+        {
+          "next": "adaptive_card_manage_credit_card",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains card",
+              "arguments": ["{{widgets.send_and_wait_cmd.inbound.Body}}"],
+              "type": "contains",
+              "value": "Card"
+            }
+          ]
+        },
+        {
+          "next": "adaptive_card_flight_status",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains flight",
+              "arguments": ["{{widgets.send_and_wait_cmd.inbound.Body}}"],
+              "type": "contains",
+              "value": "Flight"
+            }
+          ]
+        },
+        {
+          "next": "send_to_flex_1",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains help",
+              "arguments": ["{{widgets.send_and_wait_cmd.inbound.Body}}"],
+              "type": "contains",
+              "value": "Agent"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.send_and_wait_cmd.inbound.Body}}",
+        "offset": {
+          "x": -1290,
+          "y": 1630
+        }
+      }
+    },
+    {
+      "name": "send_and_wait_cmd",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_1",
+          "event": "incomingMessage"
+        },
+        {
+          "next": "end_on_expire",
+          "event": "timeout"
+        },
+        {
+          "next": "end_on_fail",
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -80,
+          "y": 1170
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "attributes": "{\"adaptive-card\":{\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"type\": \"AdaptiveCard\",\n  \"version\": \"1.5\",\n  \"fallbackText\": \"This card requires Media to be viewed. Ask your platform to update to Adaptive Cards v1.6 for this and more!\",\n  \"body\": [\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Twilio Flex Contact Center\",\n      \"wrap\": true,\n      \"style\": \"heading\"\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Twilio Flex is a digital engagement center for the entire customer journey—a sales tool for pre-purchase conversations, a cloud-based contact center, and an in-app digital concierge.\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"Media\",\n      \"poster\": \"https://www.twilio.com/content/dam/twilio-com/global/en/products/flex/overview/overview_flex_hero@2x.png/_jcr_content/renditions/compressed-original.webp\",\n      \"altText\": \"Adaptive Cards overview video\",\n      \"sources\": [\n        {\n          \"mimeType\": \"video/mp4\",\n          \"url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n        }\n      ]\n    }\n  ],\n  \"actions\": [\n    {\n      \"type\": \"Action.OpenUrl\",\n      \"title\": \"Learn more\",\n      \"url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n    }\n  ]\n}\n}",
+        "body": "How can we help?",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "adaptive_card_manage_credit_card",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "send_and_wait_cmd",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -990,
+          "y": 2130
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "attributes": "{\"adaptive-card\":{\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"type\":\"AdaptiveCard\",\"version\":\"1.4\",\"fallbackText\":\"This card requires Media to be viewed. Ask your platform to update to Adaptive Cards v1.6 for this and more!\",\"body\":[{\"type\":\"TextBlock\",\"text\":\"Manage your card online\",\"wrap\":true,\"style\":\"heading\"},{\"type\":\"TextBlock\",\"text\":\"See our simple instructions to order a replacement debit or credit card. We can show you how to pay or change your ANZ credit card. You can also add a trusted friend, partner or family member as an additional cardholder. \",\"wrap\":true},{\"type\":\"Image\",\"url\":\"https://www.anz.com.au/content/dam/anzcomau/illustration/support/help-topic-payments.svg\"}],\"actions\":[{\"type\":\"Action.OpenUrl\",\"title\":\"Learn more\",\"style\":\"positive\",\"url\":\"https://www.anz.com.au/support/manage-your-card/\"}]}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Manage your card online"
+      }
+    },
+    {
+      "name": "adaptive_card_flight_status",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "send_and_wait_cmd",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -650,
+          "y": 2130
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "attributes": "{\"adaptive-card\":{\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"type\":\"AdaptiveCard\",\"version\":\"1.5\",\"speak\":\"Flight KL0605 to San Fransisco has been delayed.It will not leave until 10:10 AM.\",\"body\":[{\"type\":\"TextBlock\",\"text\":\"Your Flight Update\",\"wrap\":true,\"style\":\"heading\"},{\"type\":\"ColumnSet\",\"columns\":[{\"type\":\"Column\",\"width\":\"auto\",\"items\":[{\"type\":\"Image\",\"size\":\"Small\",\"altText\":\"Airplane\",\"url\":\"https://adaptivecards.io/content/airplane.png\"}]},{\"type\":\"Column\",\"width\":\"stretch\",\"items\":[{\"type\":\"TextBlock\",\"text\":\"Flight Status\",\"horizontalAlignment\":\"Right\",\"isSubtle\":true,\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"DELAYED\",\"horizontalAlignment\":\"Right\",\"spacing\":\"None\",\"size\":\"Large\",\"color\":\"Attention\",\"wrap\":true}]}]},{\"type\":\"ColumnSet\",\"separator\":true,\"spacing\":\"Medium\",\"columns\":[{\"type\":\"Column\",\"width\":\"stretch\",\"items\":[{\"type\":\"TextBlock\",\"text\":\"Passengers\",\"isSubtle\":true,\"weight\":\"Bolder\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"Christopher Connolly\",\"spacing\":\"Small\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"Jason Learmouth\",\"spacing\":\"Small\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"Kevin Mitnick\",\"spacing\":\"Small\",\"wrap\":true}]},{\"type\":\"Column\",\"width\":\"auto\",\"items\":[{\"type\":\"TextBlock\",\"text\":\"Seat\",\"horizontalAlignment\":\"Right\",\"isSubtle\":true,\"weight\":\"Bolder\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"14A\",\"horizontalAlignment\":\"Right\",\"spacing\":\"Small\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"14B\",\"horizontalAlignment\":\"Right\",\"spacing\":\"Small\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"14C\",\"horizontalAlignment\":\"Right\",\"spacing\":\"Small\",\"wrap\":true}]}]},{\"type\":\"ColumnSet\",\"spacing\":\"Medium\",\"separator\":true,\"columns\":[{\"type\":\"Column\",\"width\":1,\"items\":[{\"type\":\"TextBlock\",\"text\":\"Flight\",\"isSubtle\":true,\"weight\":\"Bolder\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"CC247\",\"spacing\":\"Small\",\"wrap\":true}]},{\"type\":\"Column\",\"width\":1,\"items\":[{\"type\":\"TextBlock\",\"text\":\"Departs\",\"isSubtle\":true,\"horizontalAlignment\":\"Center\",\"weight\":\"Bolder\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"11:20 AM\",\"color\":\"Attention\",\"weight\":\"Bolder\",\"horizontalAlignment\":\"Center\",\"spacing\":\"Small\",\"wrap\":true}]},{\"type\":\"Column\",\"width\":1,\"items\":[{\"type\":\"TextBlock\",\"text\":\"Arrives\",\"isSubtle\":true,\"horizontalAlignment\":\"Right\",\"weight\":\"Bolder\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"8:20 PM\",\"color\":\"Attention\",\"horizontalAlignment\":\"Right\",\"weight\":\"Bolder\",\"spacing\":\"Small\",\"wrap\":true}]}]},{\"type\":\"ColumnSet\",\"spacing\":\"Medium\",\"separator\":true,\"columns\":[{\"type\":\"Column\",\"width\":1,\"items\":[{\"type\":\"TextBlock\",\"text\":\"Sydney Airport\",\"isSubtle\":true,\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"SYD\",\"size\":\"ExtraLarge\",\"color\":\"Accent\",\"spacing\":\"None\",\"wrap\":true}]},{\"type\":\"Column\",\"width\":\"auto\",\"items\":[{\"type\":\"TextBlock\",\"text\":\" \",\"wrap\":true},{\"type\":\"Image\",\"url\":\"https://adaptivecards.io/content/airplane.png\",\"altText\":\"Flight to\",\"size\":\"Small\"}]},{\"type\":\"Column\",\"width\":1,\"items\":[{\"type\":\"TextBlock\",\"text\":\"Raleigh Durham\",\"isSubtle\":true,\"horizontalAlignment\":\"Right\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"RDU\",\"horizontalAlignment\":\"Right\",\"size\":\"ExtraLarge\",\"color\":\"Accent\",\"spacing\":\"None\",\"wrap\":true}]}]}]}}",
+        "to": "{{contact.channel.address}}",
+        "body": "See your real-time flight status"
+      }
+    },
+    {
+      "name": "send_to_flex_1",
+      "type": "send-to-flex",
+      "transitions": [
+        {
+          "event": "callComplete"
+        },
+        {
+          "event": "failedToEnqueue"
+        },
+        {
+          "event": "callFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -290,
+          "y": 2130
+        },
+        "workflow": "WW45d8dd2f646ead319c49643ef1222f0b",
+        "channel": "TC7b5de672408d33a61f3d9d5662893105"
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
