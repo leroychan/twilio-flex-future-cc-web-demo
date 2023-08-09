@@ -67,7 +67,7 @@
         "webpack-bundle-analyzer": "^4.5.0"
     },
     "scripts": {
-        "start": "react-app-rewired start",
+        "start": "PORT=4000 react-app-rewired start",
         "server": "nodemon server",
         "server:ci": "node server",
         "build": "BUILD_PATH='./dist' react-app-rewired build ",
