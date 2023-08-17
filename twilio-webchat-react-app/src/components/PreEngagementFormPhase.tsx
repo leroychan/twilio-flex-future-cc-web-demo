@@ -3,11 +3,11 @@ import { Input } from "@twilio-paste/core/input";
 import { Label } from "@twilio-paste/core/label";
 import { Box } from "@twilio-paste/core/box";
 // import { TextArea } from "@twilio-paste/core/textarea";
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@twilio-paste/core/button";
 import { useDispatch, useSelector } from "react-redux";
 import { Text } from "@twilio-paste/core/text";
-import { Anchor, Stack } from "@twilio-paste/core";
+import { Anchor, HelpText, Spinner, Stack } from "@twilio-paste/core";
 
 import { sessionDataHandler } from "../sessionDataHandler";
 import { addNotification, changeEngagementPhase, updatePreEngagementData } from "../store/actions/genericActions";
@@ -19,7 +19,28 @@ import { NotificationBar } from "./NotificationBar";
 import { introStyles, fieldStyles, titleStyles, formStyles } from "./styles/PreEngagementFormPhase.styles";
 import { useAnalytics } from "./Analytics";
 
+interface IPInfo {
+    status: string;
+    country: string;
+    countryCode: string;
+    region: string;
+    regionName: string;
+    city: string;
+    zip: string;
+    lat: number;
+    lon: number;
+    timezone: string;
+    isp: string;
+    org: string;
+    as: string;
+    query: string;
+}
+
 export const PreEngagementFormPhase = () => {
+    const [ip_info, setIPInfo] = useState<IPInfo>();
+    const [form_phone, setFormPhone] = useState<string>();
+    const [isFetchingPhone, setIsFetchingPhone] = useState<boolean>(false);
+    const [isValidPhone, setIsValidPhone] = useState<boolean>(false);
     const { name, email, phone, animal, colour, destination } =
         useSelector((state: AppState) => state.session.preEngagementData) || {};
     const dispatch = useDispatch();
@@ -46,7 +67,7 @@ export const PreEngagementFormPhase = () => {
                     friendlyName: name,
                     email,
                     phone,
-                    query: `I'm at the Twilio Talk!`,
+                    query: `I'm at playing along!`,
                     animal,
                     colour,
                     destination
@@ -59,14 +80,46 @@ export const PreEngagementFormPhase = () => {
         }
     };
 
-    const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.value.startsWith("4") && e.target.value.length === 9) {
-            dispatch(updatePreEngagementData({ phone: `+614${e.target.value.slice(1)}` }));
-        } else if (e.target.value.startsWith("04")) {
-            dispatch(updatePreEngagementData({ phone: `+614${e.target.value.slice(2)}` }));
-        } else {
-            dispatch(updatePreEngagementData({ phone: e.target.value }));
+    const validatePhone = async (number: string) => {
+        setIsValidPhone(false);
+
+        const url = process.env.REACT_APP_NORMALIZE_PHONE_API;
+
+        try {
+            setIsFetchingPhone(true);
+            const response = await fetch(
+                `${url}?countryCode=${ip_info?.countryCode || "US"}&From=${encodeURIComponent(number)}`
+            );
+            const bodyJson = await response.json();
+            const normalizedPhoneNumber = bodyJson.phoneNumber;
+            if (normalizedPhoneNumber && normalizedPhoneNumber.length > 0) {
+                dispatch(updatePreEngagementData({ phone: normalizedPhoneNumber }));
+                setIsValidPhone(true);
+            }
+        } catch (error) {
+            console.log("Borked normalizing phone number", error);
+            setIsValidPhone(false);
+        } finally {
+            setIsFetchingPhone(false);
         }
+    };
+
+    useEffect(() => {
+        setFormPhone(phone);
+        validatePhone(phone || "");
+
+        const getInfo = async () => {
+            const resp = await fetch("http://ip-api.com/json");
+            const data = await resp.json();
+            setIPInfo(data);
+        };
+        getInfo().catch((err) => console.log(err));
+    }, []);
+
+    const handleOnChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormPhone(e.target.value);
+        dispatch(updatePreEngagementData({ phone: e.target.value }));
+        validatePhone(e.target.value);
     };
 
     return (
@@ -112,9 +165,18 @@ export const PreEngagementFormPhase = () => {
                         name="phone"
                         onChange={handleOnChange}
                         data-test="pre-engagement-chat-form-phone-input"
-                        value={phone}
+                        value={form_phone}
                         required
                     />
+
+                    <HelpText variant={isValidPhone && !isFetchingPhone ? "default" : "error"}>
+                        <Stack orientation="horizontal" spacing="space10">
+                            {isFetchingPhone && <Spinner decorative={true} size="sizeIcon10" title="" />}
+                            {isValidPhone && !isFetchingPhone
+                                ? `Using phone number ${phone}`
+                                : "Enter a valid phone number"}
+                        </Stack>
+                    </HelpText>
                 </Box>
 
                 <Box {...fieldStyles}>
@@ -137,7 +199,12 @@ export const PreEngagementFormPhase = () => {
                     />
                 </Box> */}
                 <Stack orientation="horizontal" spacing="space30">
-                    <Button variant="primary" type="submit" data-test="pre-engagement-start-chat-button">
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        data-test="pre-engagement-start-chat-button"
+                        disabled={isFetchingPhone || !isValidPhone}
+                    >
                         Start chat
                     </Button>
                     <Button
