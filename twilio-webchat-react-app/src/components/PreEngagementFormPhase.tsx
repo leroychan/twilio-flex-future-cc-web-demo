@@ -12,29 +12,12 @@ import { Anchor, HelpText, Spinner, Stack } from "@twilio-paste/core";
 import { sessionDataHandler } from "../sessionDataHandler";
 import { addNotification, changeEngagementPhase, updatePreEngagementData } from "../store/actions/genericActions";
 import { initSession } from "../store/actions/initActions";
-import { AppState, EngagementPhase } from "../store/definitions";
+import { AppState, EngagementPhase, IPInfo } from "../store/definitions";
 import { Header } from "./Header";
 import { notifications } from "../notifications";
 import { NotificationBar } from "./NotificationBar";
 import { introStyles, fieldStyles, titleStyles, formStyles } from "./styles/PreEngagementFormPhase.styles";
 import { useAnalytics } from "./Analytics";
-
-interface IPInfo {
-    status: string;
-    country: string;
-    countryCode: string;
-    region: string;
-    regionName: string;
-    city: string;
-    zip: string;
-    lat: number;
-    lon: number;
-    timezone: string;
-    isp: string;
-    org: string;
-    as: string;
-    query: string;
-}
 
 export const PreEngagementFormPhase = () => {
     const [ip_info, setIPInfo] = useState<IPInfo>();
@@ -70,7 +53,8 @@ export const PreEngagementFormPhase = () => {
                     query: `I'm at playing along!`,
                     animal,
                     colour,
-                    destination
+                    destination,
+                    ip_info
                 }
             });
             dispatch(initSession({ token: data.token, conversationSid: data.conversationSid }));
@@ -106,15 +90,19 @@ export const PreEngagementFormPhase = () => {
 
     useEffect(() => {
         setFormPhone(phone);
-        validatePhone(phone || "");
 
         const getInfo = async () => {
-            const resp = await fetch("http://ip-api.com/json");
+            const resp = await fetch("https://freeipapi.com/api/json");
             const data = await resp.json();
             setIPInfo(data);
+            dispatch(updatePreEngagementData({ ip_info: data }));
         };
         getInfo().catch((err) => console.log(err));
     }, []);
+
+    useEffect(() => {
+        validatePhone(phone || "");
+    }, [ip_info]);
 
     const handleOnChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormPhone(e.target.value);

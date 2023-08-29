@@ -13,6 +13,21 @@ export enum EngagementPhase {
     Loading = "Loading"
 }
 
+export type IPInfo = {
+    ipVersion: number;
+    ipAddress: string;
+    latitude: number;
+    longitude: number;
+    countryName: string;
+    countryCode: string;
+    timeZone: string;
+    zipCode: string;
+    cityName: string;
+    regionName: string;
+    continent: string;
+    continentCode: string;
+};
+
 export type ChatState = {
     conversationsClient?: Client;
     conversation?: Conversation;
@@ -31,6 +46,7 @@ export type PreEngagementData = {
     animal: string;
     colour: string;
     destination: string;
+    ip_info?: IPInfo;
 };
 
 export type SessionState = {
