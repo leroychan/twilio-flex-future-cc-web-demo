@@ -5,6 +5,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# dist
+twilio-webchat-react-app/dist
+
 # Runtime data
 pids
 *.pid
