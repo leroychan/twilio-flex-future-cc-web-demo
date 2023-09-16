@@ -5,10 +5,28 @@ import { AlertVariants } from "@twilio-paste/core/alert";
 import { FileAttachmentConfig, TranscriptConfig } from "../definitions";
 
 export enum EngagementPhase {
+    PreEngagementDestination = "PreEngagementDestination",
+    PreEngagementColour = "PreEngagementColour",
+    PreEngagementAnimal = "PreEngagementAnimal",
     PreEngagementForm = "PreEngagementForm",
     MessagingCanvas = "MessagingCanvas",
     Loading = "Loading"
 }
+
+export type IPInfo = {
+    ipVersion: number;
+    ipAddress: string;
+    latitude: number;
+    longitude: number;
+    countryName: string;
+    countryCode: string;
+    timeZone: string;
+    zipCode: string;
+    cityName: string;
+    regionName: string;
+    continent: string;
+    continentCode: string;
+};
 
 export type ChatState = {
     conversationsClient?: Client;
@@ -20,7 +38,16 @@ export type ChatState = {
     conversationState?: string;
 };
 
-export type PreEngagementData = { name: string; email: string; query: string };
+export type PreEngagementData = {
+    name: string;
+    email: string;
+    phone: string;
+    query: string;
+    animal: string;
+    colour: string;
+    destination: string;
+    ip_info?: IPInfo;
+};
 
 export type SessionState = {
     currentPhase: EngagementPhase;

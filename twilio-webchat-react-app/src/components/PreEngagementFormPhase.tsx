@@ -1,53 +1,62 @@
+/* eslint-disable camelcase */
 import { Input } from "@twilio-paste/core/input";
 import { Label } from "@twilio-paste/core/label";
 import { Box } from "@twilio-paste/core/box";
-import { TextArea } from "@twilio-paste/core/textarea";
-import { FormEvent } from "react";
+// import { TextArea } from "@twilio-paste/core/textarea";
+import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@twilio-paste/core/button";
 import { useDispatch, useSelector } from "react-redux";
 import { Text } from "@twilio-paste/core/text";
+import { Anchor, HelpText, Spinner, Stack } from "@twilio-paste/core";
 
 import { sessionDataHandler } from "../sessionDataHandler";
 import { addNotification, changeEngagementPhase, updatePreEngagementData } from "../store/actions/genericActions";
 import { initSession } from "../store/actions/initActions";
-import { AppState, EngagementPhase } from "../store/definitions";
+import { AppState, EngagementPhase, IPInfo } from "../store/definitions";
 import { Header } from "./Header";
 import { notifications } from "../notifications";
 import { NotificationBar } from "./NotificationBar";
 import { introStyles, fieldStyles, titleStyles, formStyles } from "./styles/PreEngagementFormPhase.styles";
-
-interface WindowWithSegment {
-    analytics?: {
-        identify: any;
-    };
-}
+import { useAnalytics } from "./Analytics";
 
 export const PreEngagementFormPhase = () => {
-    const { name, email, query } = useSelector((state: AppState) => state.session.preEngagementData) || {};
+    const [ip_info, setIPInfo] = useState<IPInfo>();
+    const [form_phone, setFormPhone] = useState<string>();
+    const [isFetchingPhone, setIsFetchingPhone] = useState<boolean>(false);
+    const [isValidPhone, setIsValidPhone] = useState<boolean>(false);
+    const { name, email, phone, animal, colour, destination } =
+        useSelector((state: AppState) => state.session.preEngagementData) || {};
     const dispatch = useDispatch();
+    const analytics = useAnalytics();
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+
         dispatch(changeEngagementPhase({ phase: EngagementPhase.Loading }));
+        analytics.identify(email, {
+            name,
+            email,
+            phone,
+            animal,
+            favourite_colour: colour,
+            destination_preference: destination
+        });
+
+        analytics.track("Request Engagement", { source: "Web widget" });
+
         try {
             const data = await sessionDataHandler.fetchAndStoreNewSession({
                 formData: {
                     friendlyName: name,
                     email,
-                    query
+                    phone,
+                    query: `I'm at playing along!`,
+                    animal,
+                    colour,
+                    destination,
+                    ip_info
                 }
             });
-
-            // Send Segment event
-            const w = window as WindowWithSegment;
-            if (w && w.analytics && w.analytics.identify && email && name) {
-                w.analytics.identify(email, {
-                    email,
-                    firstName: name.split(" ")[0],
-                    lastName: name.split(" ")[1]
-                });
-            }
-
             dispatch(initSession({ token: data.token, conversationSid: data.conversationSid }));
         } catch (err) {
             dispatch(addNotification(notifications.failedToInitSessionNotification((err as Error).message)));
@@ -55,11 +64,50 @@ export const PreEngagementFormPhase = () => {
         }
     };
 
-    const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit(e);
+    const validatePhone = async (number: string) => {
+        setIsValidPhone(false);
+
+        const url = process.env.REACT_APP_NORMALIZE_PHONE_API;
+
+        try {
+            setIsFetchingPhone(true);
+            const response = await fetch(
+                `${url}?countryCode=${ip_info?.countryCode || "US"}&From=${encodeURIComponent(number)}`
+            );
+            const bodyJson = await response.json();
+            const normalizedPhoneNumber = bodyJson.phoneNumber;
+            if (normalizedPhoneNumber && normalizedPhoneNumber.length > 0) {
+                dispatch(updatePreEngagementData({ phone: normalizedPhoneNumber }));
+                setIsValidPhone(true);
+            }
+        } catch (error) {
+            console.log("Borked normalizing phone number", error);
+            setIsValidPhone(false);
+        } finally {
+            setIsFetchingPhone(false);
         }
+    };
+
+    useEffect(() => {
+        setFormPhone(phone);
+
+        const getInfo = async () => {
+            const resp = await fetch("https://freeipapi.com/api/json");
+            const data = await resp.json();
+            setIPInfo(data);
+            dispatch(updatePreEngagementData({ ip_info: data }));
+        };
+        getInfo().catch((err) => console.log(err));
+    }, []);
+
+    useEffect(() => {
+        validatePhone(phone || "");
+    }, [ip_info]);
+
+    const handleOnChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormPhone(e.target.value);
+        dispatch(updatePreEngagementData({ phone: e.target.value }));
+        validatePhone(e.target.value);
     };
 
     return (
@@ -97,8 +145,36 @@ export const PreEngagementFormPhase = () => {
                         required
                     />
                 </Box>
+                <Box {...fieldStyles}>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                        type="tel"
+                        placeholder="Please enter your phone number"
+                        name="phone"
+                        onChange={handleOnChange}
+                        data-test="pre-engagement-chat-form-phone-input"
+                        value={form_phone}
+                        required
+                    />
+
+                    <HelpText variant={isValidPhone && !isFetchingPhone ? "default" : "error"}>
+                        <Stack orientation="horizontal" spacing="space10">
+                            {isFetchingPhone && <Spinner decorative={true} size="sizeIcon10" title="" />}
+                            {isValidPhone && !isFetchingPhone
+                                ? `Using phone number ${phone}`
+                                : "Enter a valid phone number"}
+                        </Stack>
+                    </HelpText>
+                </Box>
 
                 <Box {...fieldStyles}>
+                    We will use the information you provide consistent with our{" "}
+                    <Anchor href="https://www.twilio.com/legal/privacy" showExternal target="_blank">
+                        Privacy Policy.
+                    </Anchor>
+                </Box>
+
+                {/* <Box {...fieldStyles}>
                     <Label htmlFor="query">How can we help you?</Label>
                     <TextArea
                         placeholder="Ask a question"
@@ -109,11 +185,24 @@ export const PreEngagementFormPhase = () => {
                         onKeyPress={handleKeyPress}
                         required
                     />
-                </Box>
-
-                <Button variant="primary" type="submit" data-test="pre-engagement-start-chat-button">
-                    Start chat
-                </Button>
+                </Box> */}
+                <Stack orientation="horizontal" spacing="space30">
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        data-test="pre-engagement-start-chat-button"
+                        disabled={isFetchingPhone || !isValidPhone}
+                    >
+                        Start chat
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => dispatch(changeEngagementPhase({ phase: EngagementPhase.PreEngagementColour }))}
+                        data-test="pre-engagement-start-chat-button"
+                    >
+                        Start over
+                    </Button>
+                </Stack>
             </Box>
         </>
     );

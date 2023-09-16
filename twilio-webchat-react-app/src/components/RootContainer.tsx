@@ -5,8 +5,10 @@ import { MessagingCanvasPhase } from "./MessagingCanvasPhase";
 import { AppState, EngagementPhase } from "../store/definitions";
 import { PreEngagementFormPhase } from "./PreEngagementFormPhase";
 import { LoadingPhase } from "./LoadingPhase";
-import { EntryPoint } from "./EntryPoint";
 import { innerContainerStyles, outerContainerStyles } from "./styles/RootContainer.styles";
+import { PreEngagementColour } from "./PreEngagementColour";
+import { PreEngagementAnimal } from "./PreEngagementAnimal";
+import { PreEngagementDestination } from "./PreEngagementDestination";
 
 const getPhaseComponent = (phase: EngagementPhase) => {
     switch (phase) {
@@ -15,8 +17,15 @@ const getPhaseComponent = (phase: EngagementPhase) => {
         case EngagementPhase.MessagingCanvas:
             return <MessagingCanvasPhase />;
         case EngagementPhase.PreEngagementForm:
-        default:
             return <PreEngagementFormPhase />;
+        case EngagementPhase.PreEngagementColour:
+            return <PreEngagementColour />;
+        case EngagementPhase.PreEngagementAnimal:
+            return <PreEngagementAnimal />;
+        case EngagementPhase.PreEngagementDestination:
+            return <PreEngagementDestination />;
+        default:
+            return <PreEngagementColour />;
     }
 };
 
@@ -34,7 +43,7 @@ export function RootContainer() {
                         {getPhaseComponent(currentPhase)}
                     </Box>
                 )}
-                <EntryPoint />
+                {/* <EntryPoint /> */}
             </Box>
         </Box>
     );
